@@ -9,6 +9,7 @@ The files created are:
 * classes.json
 * version.json
 
+The files are saved in this plugin's directory in the folder `json-files`.
 
 The JSON files have this structure (example functions.json)
 ```json
