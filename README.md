@@ -24,3 +24,8 @@ The JSON files have this structure (example functions.json)
     ]
 }
 ```
+
+The version.json file has the WordPress version that was parsed
+```json
+{"version":"4.4"}
+```
