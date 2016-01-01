@@ -8,7 +8,7 @@ The files created are:
 * filters.json
 * classes.json
 * version.json
-* wp-parser-json.zip // zip file with all files above
+* wp-parser-json.zip (zip file containing all files above)
 
 The files are saved in this plugin's directory in the folder `json-files`.
 
