@@ -157,6 +157,8 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 
 			if ( $posts ) {
 
+				$skip_deprecated = apply_filters('wp_parser_json_skip_deprecated', true);
+
 				// debug information
 				$debug_count = count( $posts );
 				$deprcated_count = 0;
@@ -171,7 +173,7 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 					$tags = get_post_meta( $post->ID, '_wp-parser_tags', true );
 
 					// skip deprecated
-					if ( $this->is_deprecated( $post->ID ) ) {
+					if ( $skip_deprecated && $this->is_deprecated( $post->ID ) ) {
 						++$deprcated_count;
 						continue;
 					}
@@ -186,6 +188,8 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 
 					$file_content[$i]['title'] = trim( $post->post_title, '"' );
 					$file_content[$i]['slug'] = $slug;
+
+					$file_content[$i] = apply_filters('wp_parser_json_content_item', $file_content[$i], $post);
 					++$i;
 				}
 
