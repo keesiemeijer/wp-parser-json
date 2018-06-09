@@ -83,9 +83,10 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 			}
 
 			$post_types = array_merge( $this->post_types, array_fill_keys( $this->hook_types, 'wp-parser-hook' ) );
+			$this->post_types = apply_filters('wp_parser_json_parse_post_types', $post_types );
 
 			// Create the post_type_slug.json files.
-			foreach ( $post_types as $slug => $post_type ) {
+			foreach ( $this->post_types as $slug => $post_type ) {
 
 				$content = $this->get_reference_content( $slug, $post_type );
 

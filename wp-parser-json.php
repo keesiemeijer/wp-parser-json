@@ -26,6 +26,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 if ( is_admin() ) {
 
+	if(! defined('WP_PARSER_JSON_DIR')) {
+		define('WP_PARSER_JSON_DIR',  plugin_dir_path( __FILE__ ) );
+	}
+
 	// class to create zip files
 	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-zip.php';
 
