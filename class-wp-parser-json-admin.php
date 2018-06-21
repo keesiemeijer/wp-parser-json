@@ -1,5 +1,5 @@
 <?php
-if ( !class_exists( 'WP_Parser_JSON_Admin' ) ) {
+if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 	class WP_Parser_JSON_Admin {
 
 		/**
@@ -70,9 +70,21 @@ if ( !class_exists( 'WP_Parser_JSON_Admin' ) ) {
 
 			$files = new WP_Parser_JSON_File();
 
-			// abort if we cannot access the WP_Filesystem API
-			if ( $files->generate_files() === true ) {
-				return;
+			if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+				check_admin_referer( 'wp-parser-json_nonce' );
+
+				// remove the magic quotes
+				$_POST = stripslashes_deep( $_POST );
+
+				$generate_files = false;
+				if ( isset( $_POST['submit'] ) && ( 'Generate json files!' === $_POST['submit'] ) ) {
+					$generate_files = true;
+				}
+
+				// abort if we cannot access the WP_Filesystem API
+				if ( $generate_files && ( true === $files->generate_files() ) ) {
+					return;
+				}
 			}
 
 			echo '<div class="wrap">';
@@ -82,7 +94,7 @@ if ( !class_exists( 'WP_Parser_JSON_Admin' ) ) {
 			settings_errors();
 
 			// don't show the form if the post types from WP Parser don't exist
-			if ( !$files->post_types_exists() ) {
+			if ( ! $files->post_types_exists() ) {
 				return;
 			}
 
@@ -94,15 +106,15 @@ if ( !class_exists( 'WP_Parser_JSON_Admin' ) ) {
 			$errors =  get_settings_errors();
 			$settings_updated = true;
 			// Check if new files were generated.
-			if ( !( isset( $errors[0]['code'] ) && ( 'wp_parser_json_updated' === $errors[0]['code'] ) ) ) {
+			if ( ! ( isset( $errors[0]['code'] ) && ( 'wp_parser_json_updated' === $errors[0]['code'] ) ) ) {
 
 				// Offer download link to old zip file if it exists.
 				$zip_dir = plugin_dir_path( __FILE__ ) . 'json-files/wp-parser-json.zip';
 				$version = plugin_dir_path( __FILE__ ) . 'json-files/version.json';
 				if ( file_exists(  $zip_dir ) && file_exists(  $version ) ) {
 					$version = json_decode( file_get_contents( $version ) );
-					$version = isset($version->version) ? '(WP ' . $version->version . ')' : '';
-					echo '<a href="'. plugins_url( 'wp-parser-json' ) . '/json-files/wp-parser-json.zip">'; 
+					$version = isset( $version->version ) ? '(WP ' . $version->version . ')' : '';
+					echo '<a href="' . plugins_url( 'wp-parser-json' ) . '/json-files/wp-parser-json.zip">';
 					printf( __( 'download %s files', 'wp-parser-json' ), $version ) . '</a>';
 				}
 				$settings_updated = false;

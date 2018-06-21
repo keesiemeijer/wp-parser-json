@@ -18,24 +18,10 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 		 * @return bool Returns true if there's no access to the WP_Filesystem API.
 		 */
 		function generate_files() {
-
 			// Abort if one or more of the WP Parser post types don't exist.
-			if ( !$this->post_types_exists() ) {
+			if ( ! $this->post_types_exists() ) {
 				$error = esc_html__( "WP Parser post types don't exist", 'wp-parser-json' );
-				add_settings_error( 'parser-files', 'post_type_fail', $error, 'error' );
-				return false;
-			}
-
-			if ( 'POST' != $_SERVER['REQUEST_METHOD'] ) {
-				return false;
-			}
-
-			check_admin_referer( 'wp-parser-json_nonce' );
-
-			// remove the magic quotes
-			$_POST = stripslashes_deep( $_POST );
-
-			if ( ! ( isset( $_POST['submit'] ) && ( 'Generate json files!' === $_POST['submit'] ) ) ) {
+				add_settings_error( 'wp-parser-json', 'post_type_fail', $error, 'error' );
 				return false;
 			}
 
@@ -81,12 +67,15 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 					return false;
 				}
 			}
-
+			$wp_cli = defined('WP_CLI') && WP_CLI;
 			$post_types = array_merge( $this->post_types, array_fill_keys( $this->hook_types, 'wp-parser-hook' ) );
 			$this->post_types = apply_filters('wp_parser_json_parse_post_types', $post_types );
 
 			// Create the post_type_slug.json files.
 			foreach ( $this->post_types as $slug => $post_type ) {
+				if($wp_cli) {
+					WP_CLI::log( "Generating {$slug}.json file..." );
+				}
 
 				$content = $this->get_reference_content( $slug, $post_type );
 

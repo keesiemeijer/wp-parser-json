@@ -24,22 +24,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+if(! defined('WP_PARSER_JSON_DIR')) {
+	define('WP_PARSER_JSON_DIR',  plugin_dir_path( __FILE__ ) );
+}
+
+// admin page
 if ( is_admin() ) {
-
-	if(! defined('WP_PARSER_JSON_DIR')) {
-		define('WP_PARSER_JSON_DIR',  plugin_dir_path( __FILE__ ) );
-	}
-
-	// class to create zip files
-	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-zip.php';
-
-	// class to create files
-	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-query.php';
-
-	// class to create files
-	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-file.php';
-
-	// admin page
 	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-admin.php';
+}
 
+// class to create zip files
+require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-zip.php';
+
+// class to create files
+require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-query.php';
+
+// class to create files
+require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-file.php';
+
+if ( defined('WP_CLI') && WP_CLI ) {
+	require_once plugin_dir_path( __FILE__ ) . '/class-wpcli-command.php';
 }
