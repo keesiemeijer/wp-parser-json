@@ -2,7 +2,7 @@
 /**
  * Generates json files
  */
-if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
+if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 	class WP_Parser_JSON_File extends WP_Parser_JSON_Reference_Query {
 
 		public function __construct() {
@@ -17,13 +17,8 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 		 * @since 0.1
 		 * @return bool Returns true if there's no access to the WP_Filesystem API.
 		 */
-		function generate_files() {
-			// Abort if one or more of the WP Parser post types don't exist.
-			if ( ! $this->post_types_exists() ) {
-				$error = esc_html__( "WP Parser post types don't exist", 'wp-parser-json' );
-				add_settings_error( 'wp-parser-json', 'post_type_fail', $error, 'error' );
-				return false;
-			}
+		function generate_files( $post_types = array() ) {
+			$wp_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 			// Okay, let's see about getting credentials.
 			$form_fields = array();
@@ -53,7 +48,7 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 
 				// Delete directory (and files) if it exists.
 				if ( $wp_filesystem->exists( $dir ) ) {
-					if ( !$wp_filesystem->rmdir( $dir, true ) ) {
+					if ( ! $wp_filesystem->rmdir( $dir, true ) ) {
 						$error = esc_html__( "Unable to delete directory $dir", 'wp-parser-json' );
 						add_settings_error( 'wp-parser-json', 'delete_directory', $error, 'error' );
 						return false;
@@ -61,40 +56,86 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 				}
 
 				// Create new directory.
-				if ( !$wp_filesystem->mkdir( $dir ) ) {
+				if ( ! $wp_filesystem->mkdir( $dir ) ) {
 					$error = esc_html__( "Unable to create the directory {$dir}"  , 'wp-parser-json' );
 					add_settings_error( 'wp-parser-json', 'create_directory', $error, 'error' );
 					return false;
 				}
 			}
-			$wp_cli = defined('WP_CLI') && WP_CLI;
-			$post_types = array_merge( $this->post_types, array_fill_keys( $this->hook_types, 'wp-parser-hook' ) );
-			$this->post_types = apply_filters('wp_parser_json_parse_post_types', $post_types );
+
+			$post_types = apply_filters( 'wp_parser_json_parse_post_types', $post_types );
+			if ( ! $post_types ) {
+				$error = esc_html__( "No post type JSON files generated. Please provide a valid post type", 'wp-parser-json' );
+				add_settings_error( 'wp-parser-json', 'post_type_fail', $error, 'error' );
+				return false;
+			}
+
+			$files_created    = false;
+			$phpdoc_post_type = false;
+			$error  = '';
 
 			// Create the post_type_slug.json files.
-			foreach ( $this->post_types as $slug => $post_type ) {
-				if($wp_cli) {
+			foreach ( $post_types as $slug => $post_type ) {
+				if ( ! post_type_exists( $post_type ) ) {
+					$error .= sprintf( __( "No %s file created", 'wp-parser-json' ), $slug . '.json' );
+					$error .= ' ' . sprintf( __( "Please make sure post type %s exists", 'wp-parser-json' ), $post_type  ) . '<br/>';
+					continue;
+				}
+
+				if ( $wp_cli ) {
 					WP_CLI::log( "Generating {$slug}.json file..." );
 				}
 
-				$content = $this->get_reference_content( $slug, $post_type );
+				$content  = $this->get_post_type_content( $slug, $post_type );
+				$filename = sanitize_file_name(  $slug . '.json' );
 
-				$file = trailingslashit( $dirs['json-files'] ) . $slug . '.json';
+				$file = trailingslashit( $dirs['json-files'] ) . $filename;
 				if ( ! $wp_filesystem->put_contents( $file, $content, FS_CHMOD_FILE ) ) {
 					$error = esc_html__( "Unable to create the file: {$slug}.json", 'wp-parser-json' );
 					add_settings_error( 'wp-parser-json', 'create_file', $error, 'error' );
 					return false;
 				}
+
+				$files_created = true;
+				if ( wppj_is_phpdoc_parser_post_type( $post_type ) ) {
+					$phpdoc_post_type = true;
+				}
 			}
 
-			//create version.json file
-			$file = trailingslashit( $dirs['json-files'] ) . 'version.json';
-			if ( ! $wp_filesystem->put_contents( $file, '{"version":"' . $this->wp_version . '"}', FS_CHMOD_FILE ) ) {
-				$error = esc_html__( "Unable to create the file: version.json", 'wp-parser-json' );
-				add_settings_error( 'wp-parser-json', 'create_file', $error, 'error' );
+			if ( $error ) {
+				add_settings_error( 'wp-parser-json', 'no_post_type', $error, 'error' );
+			}
+
+			if ( $phpdoc_post_type ) {
+				if ( $wp_cli ) {
+					WP_CLI::log( "Generating version.json file..." );
+				}
+
+				$version = wppj_get_phpdoc_parser_version();
+
+				//create version.json file
+				$file = trailingslashit( $dirs['json-files'] ) . 'version.json';
+				if ( ! $wp_filesystem->put_contents( $file, '{"version":"' . $version . '"}', FS_CHMOD_FILE ) ) {
+					$error = esc_html__( "Unable to create the file: version.json", 'wp-parser-json' );
+					add_settings_error( 'wp-parser-json', 'create_file', $error, 'error' );
+					return false;
+				}
+
+				$files_created = true;
+			}
+
+			if ( ! $files_created ) {
+				$error = esc_html__( "Error: No JSON files created.", 'wp-parser-json' );
+				add_settings_error( 'wp-parser-json', 'created_files', $error, 'error' );
+
+				if ( ! $wp_filesystem->rmdir( $dirs['json-files-temp'], true ) ) {
+					$error = esc_html__( "Unable to delete directory /json-files-temp", 'wp-parser-json' );
+					add_settings_error( 'wp-parser-json', 'delete_directory', $error, 'error' );
+					return false;
+				}
+
 				return false;
 			}
-
 
 			// create zip file
 			$args = array(
@@ -112,7 +153,7 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 
 			// Move zip file.
 			if ( $wp_filesystem->exists( $zip_file ) ) {
-				if ( !rename( $zip_file, trailingslashit( $dirs['json-files'] ) . 'wp-parser-json.zip' ) ) {
+				if ( ! rename( $zip_file, trailingslashit( $dirs['json-files'] ) . 'wp-parser-json.zip' ) ) {
 					$error = esc_html__( "Unable to move file $zip_file", 'wp-parser-json' );
 					add_settings_error( 'wp-parser-json', 'move_file', $error, 'error' );
 					return false;
@@ -125,17 +166,17 @@ if ( !class_exists( 'WP_Parser_JSON_File' ) ) {
 			}
 
 			// Delete temp directory.
-			if ( !$wp_filesystem->rmdir( $dirs['json-files-temp'], true ) ) {
+			if ( ! $wp_filesystem->rmdir( $dirs['json-files-temp'], true ) ) {
 				$error = esc_html__( "Unable to delete directory {$dirs['json-files-temp']}", 'wp-parser-json' );
 				add_settings_error( 'wp-parser-json', 'delete_directory', $error, 'error' );
 				return false;
 			}
 
 			// Hooray, we reached the end! Let's add a message with a download link.
-			$download_link = '<a href="'. plugins_url( 'wp-parser-json' ) . '/json-files/wp-parser-json.zip">';
+			$download_link = '<a href="' . plugins_url( 'wp-parser-json' ) . '/json-files/wp-parser-json.zip">';
 			$download_link .= __( 'Download the files', 'wp-parser-json' ) . '</a>';
 
-			$success = esc_html__( "Success! WordPress {$this->wp_version} JSON files created in {$dirs['json-files']}/", 'wp-parser-json' );
+			$success = esc_html__( "Success! JSON files created in {$dirs['json-files']}/", 'wp-parser-json' );
 			$success .= "<br/><br/>$download_link";
 
 			add_settings_error( 'wp-parser-json', 'wp_parser_json_updated', $success, 'updated' );

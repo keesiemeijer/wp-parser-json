@@ -1,46 +1,6 @@
 <?php
-if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
+if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 	class WP_Parser_JSON_Reference_Query {
-
-		/**
-		 * Post types from WP Parser.
-		 *
-		 * @since 0.1
-		 * @var array
-		 */
-		public $post_types;
-
-		/**
-		 * Hook types (action and filter).
-		 *
-		 * @since 0.1
-		 * @var array
-		 */
-		public $hook_types;
-
-		/**
-		 * base url to reference posts.
-		 *
-		 * @since 0.1
-		 * @var array
-		 */
-		public $base_url;
-
-		/**
-		 * Parsed WordPress version.
-		 *
-		 * @since 0.1
-		 * @var array
-		 */
-		public $wp_version;
-
-		/**
-		 * Debug.
-		 *
-		 * @since 0.1
-		 * @var bool
-		 */
-		public $debug = true;
 
 		/**
 		 * Debug output for testing.
@@ -50,176 +10,161 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		 */
 		public $debug_msg = '';
 
-
 		public function __construct() {
-
-			/**
-			 * Reference slugs and post type names from WP Parser.
-			 *
-			 * slug => post_type
-			 *
-			 * The slug is appended to $base_url below.
-			 * Files are created with the slug as name (e.g. functions.json).
-			 */
-			$this->post_types = array(
-				'functions' => 'wp-parser-function',
-				'hooks'     => 'wp-parser-hook',
-				'classes'   => 'wp-parser-class',
-			);
-
-			$this->wp_version = $this->get_wp_version();
-
-			/**
-			 * slugs from WP Parser for actions and filters.
-			 *
-			 * The slug is appended to $base_url below.
-			 * Files are created with the slug as name (e.g. actions.json).
-			 */
-			$this->hook_types = array( 'actions', 'filters' );
-
-			/**
-			 * The base url to use for the result pages in the alfred app.
-			 * todo: get the url from theme or WP Parser
-			 */
-			$base_url = 'https://developer.wordpress.org/reference';
-
-			$this->base_url = apply_filters( 'wp_parser_json_base_url', $base_url );
-
 			/* prints debug information after creating the files */
 			add_action( 'wp_parser_json_afer_form', array( $this, 'debug_output' ) );
 		}
 
-
 		/**
-		 * Returns parsed WordPress version.
+		 * Returns post type posts in json format
 		 *
-		 * @since 0.1
+		 * @since 1.0.0
 		 *
-		 * @return string WordPress version
+		 * @param string $ref_type  File slug.
+		 * @param string $post_type Post type used for the reference.
+		 * @return string Json encoded post type content.
 		 */
-		function get_wp_version() {
-			global $wp_version;
-
-			if ( function_exists( 'DevHub\get_current_version' ) ) {
-				return DevHub\get_current_version();
+		public function get_post_type_content( $ref_type, $post_type ) {
+			if ( wppj_is_phpdoc_parser_post_type( $post_type ) ) {
+				$content = $this->get_phpdoc_content( $ref_type, $post_type );
+			} else {
+				$content = $this->get_content( $ref_type, $post_type );
 			}
 
-			$current_version = get_option( 'wp_parser_imported_wp_version' );
-
-			if ( !empty( $current_version )  ) {
-				return $current_version;
-			}
-
-			return $wp_version;
+			return json_encode( $content );
 		}
 
-
 		/**
-		 * Returns reference posts in json format
+		 * Returns content for a post type.
 		 *
 		 * @since 0.1
 		 *
-		 * @param string  $ref_type  WP Parser type of reference.
-		 * @param string  $post_type Post type used for the reference.
-		 * @return string            [description]
+		 * @param string $ref_type  File slug.
+		 * @param string $post_type Post type.
+		 * @return array Array with post type content.
 		 */
-		function get_reference_content( $ref_type, $post_type ) {
-			return json_encode( $this->query_reference_posts( $ref_type, $post_type ) );
-		}
-
-
-		/**
-		 * Query WP Parser reference posts and return array with slug and title for each post.
-		 *
-		 * @since 0.1
-		 *
-		 * @param string  $ref_type  WP Parser type of reference.
-		 * @param string  $post_type Post type used for the reference.
-		 * @return string            Json encoded string with post titles and slugs.
-		 */
-		function query_reference_posts( $ref_type, $post_type ) {
+		private function get_content( $ref_type, $post_type ) {
+			$base_url = get_post_type_archive_link( $post_type );
+			$base_url = $base_url ? $base_url : get_home_url();
+			$base_url = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
 
 			$content = array(
-				'version' => $this->wp_version,
-				'url'     => esc_url( trailingslashit( $this->base_url ) . $ref_type ),
-				'content' => '',
+				'post_type' => $post_type,
+				'url'       => $base_url,
+				'content'   => '',
 			);
 
-			if ( ( 'actions' === $ref_type ) || ( 'filters' === $ref_type ) ) {
-				$content['url'] = esc_url( trailingslashit( $this->base_url ) . 'hooks' );
-			}
+			$posts = $this->get_posts( $ref_type, $post_type );
+			$count = count( $posts );
 
-			if ( !in_array( $post_type, array_values( $this->post_types ) ) ) {
-				return $content;
-			}
-
-			$posts = $this->get_reference_posts( $ref_type, $post_type );
-
-			if ( $posts ) {
-
-				$skip_deprecated = apply_filters('wp_parser_json_skip_deprecated', true);
-
-				// debug information
-				$debug_count = count( $posts );
-				$deprcated_count = 0;
-				$duplicate_count = 0;
-
-				$i = 0;
-				$file_content = array();
-
-				foreach ( $posts as $key => $post ) {
-
-					$file_source = wp_get_post_terms( $post->ID, 'wp-parser-source-file', array( 'fields' => 'names' ) );
-					$tags = get_post_meta( $post->ID, '_wp-parser_tags', true );
-
-					// skip deprecated
-					if ( $skip_deprecated && $this->is_deprecated( $post->ID ) ) {
-						++$deprcated_count;
-						continue;
-					}
-
-					// skip duplicate hook post_name (slugs)
-					if ( $this->is_hook_duplicate( $ref_type, $post->post_name ) ) {
-						++$duplicate_count;
-						continue;
-					}
-
-					$slug = basename( get_the_permalink( $post->ID ) );
-
-					$file_content[$i]['title'] = trim( $post->post_title, '"' );
-					$file_content[$i]['slug'] = $slug;
-
-					$file_content[$i] = apply_filters('wp_parser_json_content_item', $file_content[$i], $post);
-					++$i;
+			$i = 0;
+			$file_content = array();
+			foreach ( $posts as $key => $post ) {
+				$slug = get_the_permalink( $post->ID );
+				if ( $base_url && ( 0 === strpos( $slug, $base_url ) ) ) {
+					$slug = str_replace( $base_url, '', $slug );
 				}
 
-				wp_reset_postdata();
+				$file_content[ $i ]['title'] = trim( $post->post_title, '"' );
+				$file_content[ $i ]['slug']  = trim( $slug, '/ ' );
 
-				// debug information
-				$msg = "<li><h3>post type: {$ref_type}</h3><ul>";
-				$msg .= "<li>found: {$debug_count}</li>";
-				$msg .= '<li>used: ' . count( $file_content ) . '</li>';
-				$msg .= "<li>deprecated: $deprcated_count</li>";
-				$msg .= "<li>duplicates: $duplicate_count</li></ul></li>";
-				$this->debug_msg .=  $msg ;
-
-				$content['content'] = $file_content;
+				$file_content[ $i ] = apply_filters( 'wp_parser_json_content_item', $file_content[ $i ], $post );
+				++$i;
 			}
 
+			wp_reset_postdata();
+
+			// debug information
+			$msg = "<li><h3>post type: {$post_type}</h3>";
+			$msg .= "<ul><li>posts found: {$count}</li>";
+			$msg .= "<li>file: {$ref_type}.json</li></ul></li>";
+
+			$this->debug_msg .=  $msg ;
+
+			$content['content'] = $file_content;
 			return $content;
 		}
 
+		private function get_phpdoc_content( $ref_type, $post_type ) {
+			$base_url = 'https://developer.wordpress.org/reference';
+			$base_url = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
+
+			$content = array(
+				'version' => wppj_get_phpdoc_parser_version(),
+				'url'     => esc_url( trailingslashit( $base_url ) . $ref_type ),
+				'content' => array(),
+			);
+
+			if ( ( 'actions' === $ref_type ) || ( 'filters' === $ref_type ) ) {
+				$content['url'] = esc_url( trailingslashit( $base_url ) . 'hooks' );
+			}
+
+			$posts = $this->get_posts( $ref_type, $post_type );
+			if ( ! $posts ) {
+				return $content;
+			}
+
+			$skip_deprecated = apply_filters( 'wp_parser_json_skip_deprecated', true );
+
+			// debug information
+			$debug_count = count( $posts );
+			$deprcated_count = 0;
+			$duplicate_count = 0;
+
+			$i = 0;
+			$file_content = array();
+
+			foreach ( $posts as $key => $post ) {
+				// skip deprecated
+				if ( $skip_deprecated && wppj_is_deprecated( $post->ID ) ) {
+					++$deprcated_count;
+					continue;
+				}
+
+				// skip duplicate hook post_name (slugs)
+				if ( wppj_is_hook_duplicate( $ref_type, $post->post_name ) ) {
+					++$duplicate_count;
+					continue;
+				}
+
+				$slug = basename( get_the_permalink( $post->ID ) );
+
+				$file_content[ $i ]['title'] = trim( $post->post_title, '"' );
+				$file_content[ $i ]['slug'] = $slug;
+
+				$file_content[ $i ] = apply_filters( 'wp_parser_json_content_item', $file_content[ $i ], $post );
+				++$i;
+			}
+
+			wp_reset_postdata();
+
+			// debug information
+			$msg = "<li><h3>post type: {$post_type}</h3><ul>";
+			$msg .= "<li>file: {$ref_type}.json</li>";
+			$msg .= "<li>posts found: {$debug_count}</li>";
+			$msg .= '<li>posts used: ' . count( $file_content ) . '</li>';
+			$msg .= "<li>deprecated: $deprcated_count</li>";
+			$msg .= "<li>duplicates: $duplicate_count</li></ul></li>";
+			$this->debug_msg .=  $msg ;
+
+			$content['content'] = $file_content;
+
+
+			return $content;
+		}
 
 		/**
 		 * Gets posts for reference Functions, Hooks, Actions, Filters, Classes
 		 *
 		 * @since 0.1
 		 *
-		 * @param string  $ref_type  WP Parser type of reference.
-		 * @param string  $post_type Post type used for the reference.
+		 * @param string $ref_type  WP Parser type of reference.
+		 * @param string $post_type Post type used for the reference.
 		 * @return array            Array with post objects.
 		 */
-		function get_reference_posts( $ref_type, $post_type ) {
+		function get_posts( $ref_type, $post_type ) {
+			$phpdoc_hook_types   = wppj_get_phpdoc_parser_hook_types();
+			$is_phpdoc_post_type = wppj_is_phpdoc_parser_post_type( $post_type );
 
 			$args = array(
 				'posts_per_page' => -1,
@@ -228,7 +173,7 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 				'post_type'      => $post_type,
 			);
 
-			if ( in_array( $ref_type, $this->hook_types ) ) {
+			if ( $is_phpdoc_post_type && in_array( $ref_type, $phpdoc_hook_types ) ) {
 
 				if ( 'actions' === $ref_type ) {
 					$value = array( 'action', 'action_reference' );
@@ -248,99 +193,14 @@ if ( !class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 			return get_posts( $args );
 		}
 
-
-		/**
-		 * Checks if **all** of the post types from WP parser exist.
-		 *
-		 * @since 0.1
-		 *
-		 * @return bool Returns false if one or more of the post types are missing.
-		 */
-		public function post_types_exists() {
-			foreach ( $this->post_types as $type => $post_type ) {
-				if ( !post_type_exists( $post_type ) ) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-
-		/**
-		 * Checks if a hook reference type slug is a duplicate.
-		 *
-		 * @since 0.1
-		 *
-		 * @param string  $ref_type  WP Parser type of reference.
-		 * @param string  $post_name Post slug.
-		 * @return boolean           True if slug has "-{$int}"" appended to slug.
-		 */
-		function is_hook_duplicate( $ref_type, $post_name ) {
-			$return  = false;
-			if ( in_array( $ref_type, $this->hook_types ) || ( 'hooks' === $ref_type ) ) {
-
-				// match -number at end of slug
-				if ( preg_match( '/\-\d+$/', $post_name ) ) {
-					$return  = true;
-				}
-			}
-			return $return;
-		}
-
-		/**
-		 * Retrieve arguments as an array
-		 *
-		 * @param int     $post_id
-		 *
-		 * @return array
-		 */
-		function get_arguments( $post_id = null ) {
-
-			if ( empty( $post_id ) ) {
-				$post_id = get_the_ID();
-			}
-			$arguments = array();
-			$args = get_post_meta( $post_id, '_wp-parser_args', true );
-
-			if ( $args ) {
-				foreach ( $args as $arg ) {
-					if ( ! empty( $arg['type'] ) ) {
-						$arguments[ $arg['name'] ] = $arg['type'];
-					}
-				}
-			}
-
-			return $arguments;
-		}
-
-
-		/**
-		 * Checks if a function, hook, action, filter or class is deprecated.
-		 *
-		 * @since 0.1
-		 *
-		 * @param int     $post_id Post ID
-		 * @return boolean         Returns true if a function, hook or class is deprecated.
-		 */
-		function is_deprecated( $post_id ) {
-			$return  = false;
-			$source_file_object = wp_get_post_terms( $post_id, 'wp-parser-source-file', array( 'fields' => 'names' ) );
-			if ( isset( $source_file_object[0] ) && $source_file_object[0] ) {
-				if ( false !== strpos( $source_file_object[0], 'deprecated' ) ) {
-					$return  = true;
-				}
-			}
-			return $return;
-		}
-
-
 		/**
 		 * Prints debug information to the screen
 		 *
 		 * @since 0.1
 		 */
 		function debug_output( ) {
-			if ( $this->debug ) {
+			if ( $this->debug_msg ) {
+				echo '<h2>JSON files</h2>';
 				echo '<ul>' . $this->debug_msg . '</ul>';
 			}
 		}

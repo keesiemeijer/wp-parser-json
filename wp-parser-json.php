@@ -37,6 +37,9 @@ if ( is_admin() ) {
 // class to create zip files
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-zip.php';
 
+// Post type functions
+require_once plugin_dir_path( __FILE__ ) . 'post-type.php';
+
 // class to create files
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-query.php';
 
