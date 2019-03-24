@@ -13,6 +13,9 @@ class Parser_JSON_Generate {
 	 * [--post_type=<post_type>]
 	 * : Comma seperated post types to generate JSON files for.
 	 *
+	 * [--posts_per_page=<number>]
+	 * : Posts per JSON file. Default -1
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp parser-json generate --post_type=post,page
@@ -35,10 +38,20 @@ class Parser_JSON_Generate {
 			}
 		}
 
+		if ( ! isset( $assoc_args['posts_per_page'] ) ) {
+			$assoc_args['posts_per_page'] = -1;
+		} else {
+			$assoc_args['posts_per_page'] = absint( $assoc_args['posts_per_page'] );
+			if ( ! $assoc_args['posts_per_page'] ) {
+				WP_CLI::error( 'Please provide a valid number for --posts_per_page' );
+				return;
+			}
+		}
+
 		WP_CLI::log( 'Generating JSON files...' );
 		$files = new WP_Parser_JSON_File();
 
-		if ( true === $files->generate_files( $post_types ) ) {
+		if ( true === $files->generate_files( $post_types, $assoc_args ) ) {
 			WP_CLI::error( 'Could not access the WP_Filesystem API' );
 			return;
 		}

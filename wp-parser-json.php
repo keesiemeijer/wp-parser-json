@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: WP Parser JSON
-Description: A plugin to create json files with all WP functions, hooks and classes (post types) from the WP Parser plugin.
-Version: 0.1
+Description: A plugin to create JSON files with post type posts.
+Version: 1.0.0
 Author: keesiemeijer
 Author URI:
 License: GPL v2
@@ -25,20 +25,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-if(! defined('WP_PARSER_JSON_DIR')) {
-	define('WP_PARSER_JSON_DIR',  plugin_dir_path( __FILE__ ) );
+if ( ! defined( 'WP_PARSER_JSON_DIR' ) ) {
+	define( 'WP_PARSER_JSON_DIR',  plugin_dir_path( __FILE__ ) );
 }
 
 // admin page
 if ( is_admin() ) {
 	require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-admin.php';
+	WP_Parser_JSON_Admin::init();
+}
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once plugin_dir_path( __FILE__ ) . '/class-wpcli-command.php';
 }
 
 // class to create zip files
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-zip.php';
-
-// Post type functions
-require_once plugin_dir_path( __FILE__ ) . 'post-type.php';
 
 // class to create files
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-query.php';
@@ -46,6 +48,5 @@ require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-query.php';
 // class to create files
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-parser-json-file.php';
 
-if ( defined('WP_CLI') && WP_CLI ) {
-	require_once plugin_dir_path( __FILE__ ) . '/class-wpcli-command.php';
-}
+// Post type functions
+require_once plugin_dir_path( __FILE__ ) . 'post-type.php';

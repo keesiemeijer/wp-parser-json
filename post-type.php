@@ -21,8 +21,8 @@ function wppj_get_post_types() {
  * Get the post types for parsing JSON files.
  *
  * Adds labels for phpdoc parser post types (back compat)
- * 
- * @param  array $post_types Array with post types.
+ *
+ * @param array $post_types Array with post types.
  * @return array Array with post types.
  */
 function wppj_get_json_post_types( $post_types ) {
@@ -136,7 +136,7 @@ function wppj_phpdoc_parser_post_types_exists() {
  *
  * @param string $ref_type  WP Parser type of reference.
  * @param string $post_name Post slug.
- * @return boolean           True if slug has "-{$int}"" appended to slug.
+ * @return boolean True if slug has "-{$int}"" appended to slug.
  */
 function wppj_is_hook_duplicate( $ref_type, $post_name ) {
 	$return = false;
@@ -158,7 +158,7 @@ function wppj_is_hook_duplicate( $ref_type, $post_name ) {
  * @version 1.0.0
  *
  * @param int $post_id Post ID
- * @return boolean         Returns true if a function, hook or class is deprecated.
+ * @return boolean Returns true if a function, hook or class is deprecated.
  */
 function wppj_is_deprecated( $post_id ) {
 	$return  = false;

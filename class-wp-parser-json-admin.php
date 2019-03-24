@@ -64,6 +64,8 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 		 */
 		function admin_page() {
 			$post_types       = array();
+			$paginate         = false;
+			$posts_per_page   = 0;
 			$admin_post_types = wppj_get_post_types();
 			$files            = new WP_Parser_JSON_File();
 
@@ -71,8 +73,18 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 				check_admin_referer( 'wp-parser-json_nonce' );
 
 				// remove the magic quotes
-				$_POST             = stripslashes_deep( $_POST );
-				$post_types        = isset( $_POST['post_type'] ) ? $_POST['post_type'] : array();
+				$_POST      = stripslashes_deep( $_POST );
+				$post_types = isset( $_POST['post_type'] ) ? $_POST['post_type'] : array();
+
+				$json_args = array();
+				if ( isset( $_POST['paginate'] ) && 'on' === $_POST['paginate'] ) {
+					$paginate       = true;
+					$posts_per_page = isset( $_POST['posts_per_page'] ) ? absint( $_POST['posts_per_page'] ) : 0;
+					$json_args      = array( 'posts_per_page' => $posts_per_page );
+				} else {
+					$json_args = array( 'posts_per_page' => -1 );
+				}
+
 				$json_post_types   = wppj_get_json_post_types( $post_types );
 				$phpdoc_post_types = wppj_get_phpdoc_parser_post_types();
 				$phpdoc_hook_types = wppj_get_phpdoc_parser_hook_types();
@@ -98,7 +110,7 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 				}
 
 				// abort if we cannot access the WP_Filesystem API
-				if ( $generate_files && ( true === $files->generate_files( $json_post_types ) ) ) {
+				if ( $generate_files && ( true === $files->generate_files( $json_post_types, $json_args ) ) ) {
 					return;
 				}
 			}
@@ -107,24 +119,22 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 				$admin_post_types = array( 'phpdoc_parser_post_types' => 'WP Parser Post Types' ) + $admin_post_types;
 			}
 
-			$post_types_str = __( 'Post Types', 'wp-parser-json' );
-
-			$html = '<table class="form-table"><tbody><tr><th scope="row">' . $post_types_str . '</th>';
-			$html .= '<td><fieldset><legend class="screen-reader-text"><span>' . $post_types_str . '</span></legend>';
+			// Values used in admin form table
+			$checkboxes = '';
 			foreach ( (array) $admin_post_types as $key => $value ) {
 				$checked = '';
 				if ( isset( $post_types[ $key ] ) && 'on' === $post_types[ $key ] ) {
 					$checked = ' checked="checked"';
 				}
 
-				$html .= "<label for='post_type_{$key}'>";
-				$html .= "<input type='checkbox' class='checkbox' id='post_type_{$key}' name='post_type[{$key}]' {$checked} />";
-				$html .= $value  . "</label><br/>";
-
+				$checkboxes .= "<label for='post_type_{$key}'>";
+				$checkboxes .= "<input type='checkbox' class='checkbox' id='post_type_{$key}' name='post_type[{$key}]' {$checked} />";
+				$checkboxes .= $value  . "</label><br/>";
 			}
-			$html .= '</fieldset></td></tr></tbody></table>';
 
-			$phpdoc_post_types = apply_filters( 'wp_parser_json_parse_phpdoc_post_types', true );
+			$paginate_checked = $paginate ? ' checked="checked"' : '';
+			$posts_per_page   = absint( $posts_per_page );
+			$posts_per_page   = $posts_per_page ? $posts_per_page : 10;
 
 			echo '<div class="wrap">';
 			echo '<h2>' . __( 'WP Parser JSON', 'wp-parser-json' ) . '</h2>';
@@ -134,7 +144,7 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 
 			echo '<form method="post" action="">';
 			wp_nonce_field( 'wp-parser-json_nonce' );
-			echo $html;
+			include 'admin-form-table.php';
 			echo get_submit_button( esc_html__( 'Generate json files!', 'wp-parser-json' ) );
 			echo '</form>';
 
@@ -163,5 +173,4 @@ if ( ! class_exists( 'WP_Parser_JSON_Admin' ) ) {
 
 	} // class
 
-	WP_Parser_JSON_Admin::init();
 } // class exists

@@ -3,16 +3,23 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 	class WP_Parser_JSON_Reference_Query {
 
 		/**
-		 * Debug output for testing.
+		 * JSON File information.
 		 *
 		 * @since 0.1
 		 * @var string
 		 */
-		public $debug_msg = '';
+		public $file_info = '';
+
+		/**
+		 * File index
+		 *
+		 * @var array
+		 */
+		private $index = array();
 
 		public function __construct() {
-			/* prints debug information after creating the files */
-			add_action( 'wp_parser_json_afer_form', array( $this, 'debug_output' ) );
+			/* prints JSON file information after creating the files */
+			add_action( 'wp_parser_json_afer_form', array( $this, 'file_info_output' ) );
 		}
 
 		/**
@@ -24,14 +31,16 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		 * @param string $post_type Post type used for the reference.
 		 * @return string Json encoded post type content.
 		 */
-		public function get_post_type_content( $ref_type, $post_type ) {
+		public function get_post_type_items( $ref_type, $post_type, $args = array() ) {
+			$args = $this->sanitize_query_args( $args );
+
 			if ( wppj_is_phpdoc_parser_post_type( $post_type ) ) {
-				$content = $this->get_phpdoc_content( $ref_type, $post_type );
+				$content = $this->get_phpdoc_post_type_posts( $ref_type, $post_type, $args );
 			} else {
-				$content = $this->get_content( $ref_type, $post_type );
+				$content = $this->get_post_type_posts( $ref_type, $post_type, $args );
 			}
 
-			return json_encode( $content );
+			return $content;
 		}
 
 		/**
@@ -43,81 +52,64 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		 * @param string $post_type Post type.
 		 * @return array Array with post type content.
 		 */
-		private function get_content( $ref_type, $post_type ) {
-			$base_url = get_post_type_archive_link( $post_type );
-			$base_url = $base_url ? $base_url : get_home_url();
-			$base_url = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
+		private function get_post_type_posts( $ref_type, $post_type, $args = array() ) {
+			$this->set_index( $ref_type, $post_type, $args );
 
-			$content = array(
-				'post_type' => $post_type,
-				'url'       => $base_url,
-				'content'   => '',
-			);
-
-			$posts = $this->get_posts( $ref_type, $post_type );
-			$count = count( $posts );
+			$posts = $this->get_posts( $ref_type, $post_type, $args );
+			if ( ! $posts ) {
+				return array();
+			}
 
 			$i = 0;
-			$file_content = array();
+			$items = array();
 			foreach ( $posts as $key => $post ) {
 				$slug = get_the_permalink( $post->ID );
-				if ( $base_url && ( 0 === strpos( $slug, $base_url ) ) ) {
-					$slug = str_replace( $base_url, '', $slug );
+				if ( $this->index['url'] && ( 0 === strpos( $slug, $this->index['url'] ) ) ) {
+					$slug = str_replace( $this->index['url'], '', $slug );
 				}
 
-				$file_content[ $i ]['title'] = trim( $post->post_title, '"' );
-				$file_content[ $i ]['slug']  = trim( $slug, '/ ' );
+				$slug = trim( $slug, '/ ' );
 
-				$file_content[ $i ] = apply_filters( 'wp_parser_json_content_item', $file_content[ $i ], $post );
+				$items[ $i ]['title'] = trim( $post->post_title, '"' );
+				$items[ $i ]['slug']  = $slug;
+
+				$items[ $i ] = apply_filters( 'wp_parser_json_content_item', $items[ $i ], $post );
+
 				++$i;
 			}
 
 			wp_reset_postdata();
 
-			// debug information
-			$msg = "<li><h3>post type: {$post_type}</h3>";
-			$msg .= "<ul><li>posts found: {$count}</li>";
-			$msg .= "<li>file: {$ref_type}.json</li></ul></li>";
-
-			$this->debug_msg .=  $msg ;
-
-			$content['content'] = $file_content;
-			return $content;
+			return $items;
 		}
 
-		private function get_phpdoc_content( $ref_type, $post_type ) {
-			$base_url = 'https://developer.wordpress.org/reference';
-			$base_url = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
+		private function get_phpdoc_post_type_posts( $ref_type, $post_type, $args = array() ) {
+			$this->set_index( $ref_type, $post_type, $args, 'php_doc_parser' );
 
-			$content = array(
-				'version' => wppj_get_phpdoc_parser_version(),
-				'url'     => esc_url( trailingslashit( $base_url ) . $ref_type ),
-				'content' => array(),
-			);
-
-			if ( ( 'actions' === $ref_type ) || ( 'filters' === $ref_type ) ) {
-				$content['url'] = esc_url( trailingslashit( $base_url ) . 'hooks' );
-			}
-
-			$posts = $this->get_posts( $ref_type, $post_type );
+			$posts = $this->get_posts( $ref_type, $post_type, $args );
 			if ( ! $posts ) {
-				return $content;
+				return array();
 			}
 
 			$skip_deprecated = apply_filters( 'wp_parser_json_skip_deprecated', true );
+			$init_deprecated = isset( $this->index['deprecated'] ) && isset( $this->index['duplicate_hooks'] );
+			if ( $skip_deprecated && ! $init_deprecated ) {
+				// Initialize index for deprecated and duplicate hooks
+				$this->index['deprecated'] = 0;
+				$this->index['duplicate_hooks'] = 0;
+			}
 
-			// debug information
-			$debug_count = count( $posts );
-			$deprcated_count = 0;
+			$count = count( $posts );
+			$deprecated_count = 0;
 			$duplicate_count = 0;
 
 			$i = 0;
-			$file_content = array();
+			$items = array();
 
 			foreach ( $posts as $key => $post ) {
 				// skip deprecated
 				if ( $skip_deprecated && wppj_is_deprecated( $post->ID ) ) {
-					++$deprcated_count;
+					++$deprecated_count;
 					continue;
 				}
 
@@ -129,28 +121,30 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 
 				$slug = basename( get_the_permalink( $post->ID ) );
 
-				$file_content[ $i ]['title'] = trim( $post->post_title, '"' );
-				$file_content[ $i ]['slug'] = $slug;
+				$items[ $i ]['title'] = trim( $post->post_title, '"' );
+				$items[ $i ]['slug'] = $slug;
 
-				$file_content[ $i ] = apply_filters( 'wp_parser_json_content_item', $file_content[ $i ], $post );
+				$items[ $i ] = apply_filters( 'wp_parser_json_content_item', $items[ $i ], $post );
 				++$i;
 			}
 
 			wp_reset_postdata();
 
-			// debug information
-			$msg = "<li><h3>post type: {$post_type}</h3><ul>";
-			$msg .= "<li>file: {$ref_type}.json</li>";
-			$msg .= "<li>posts found: {$debug_count}</li>";
-			$msg .= '<li>posts used: ' . count( $file_content ) . '</li>';
-			$msg .= "<li>deprecated: $deprcated_count</li>";
-			$msg .= "<li>duplicates: $duplicate_count</li></ul></li>";
-			$this->debug_msg .=  $msg ;
+			if ( $skip_deprecated ) {
+				$this->index['deprecated']      = $this->index['deprecated'] + $deprecated_count;
+				$this->index['duplicate_hooks'] = $this->index['duplicate_hooks'] + $duplicate_count;
+			}
 
-			$content['content'] = $file_content;
+			if ( $count !== count( $items ) ) {
+				if ( ! $items ) {
+					// If content is empty all (current page) posts were excluded.
 
+					// Make sure to get the next page of posts.
+					$items = 'continue';
+				}
+			}
 
-			return $content;
+			return $items;
 		}
 
 		/**
@@ -162,26 +156,37 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		 * @param string $post_type Post type used for the reference.
 		 * @return array            Array with post objects.
 		 */
-		function get_posts( $ref_type, $post_type ) {
+		public function get_posts( $ref_type, $post_type, $args = array() ) {
 			$phpdoc_hook_types   = wppj_get_phpdoc_parser_hook_types();
 			$is_phpdoc_post_type = wppj_is_phpdoc_parser_post_type( $post_type );
+			$args                = $this->sanitize_query_args( $args );
+			$posts_per_page      = $args['posts_per_page'];
 
-			$args = array(
-				'posts_per_page' => -1,
+			$query_args = array(
+				'post_type'      => $post_type,
+				'posts_per_page' => $posts_per_page,
 				'orderby'        => 'title',
 				'order'          => 'ASC',
-				'post_type'      => $post_type,
 			);
 
-			if ( $is_phpdoc_post_type && in_array( $ref_type, $phpdoc_hook_types ) ) {
+			$offset = '';
+			if ( 1 < $args['page'] ) {
+				if ( -1 === (int) $posts_per_page ) {
+					return array();
+				} else {
+					$offset               = ( ( $args['page'] - 1 ) * $posts_per_page );
+					$query_args['offset'] = $offset;
+				}
+			}
 
+			if ( $is_phpdoc_post_type && in_array( $ref_type, $phpdoc_hook_types ) ) {
 				if ( 'actions' === $ref_type ) {
 					$value = array( 'action', 'action_reference' );
 				} else {
 					$value = array( 'filter', 'filter_reference' );
 				}
 
-				$args['meta_query'] =  array(
+				$query_args['meta_query'] =  array(
 					array(
 						'key' => '_wp-parser_hook_type',
 						'value' => $value,
@@ -189,19 +194,96 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 					)
 				);
 			}
+			$query_args = apply_filters( 'wp_parser_json_query_args', $query_args, $args );
 
-			return get_posts( $args );
+			// Unfilterable query args
+			$query_args['post_type']      = $post_type;
+			$query_args['posts_per_page'] = $posts_per_page;
+			if ( $offset ) {
+				$query_args['offset'] = $offset;
+			}
+
+			return get_posts( $query_args );
+		}
+
+
+		public function get_index() {
+			return $this->index;
+		}
+
+		public function reset_index() {
+			$this->index = array();
+		}
+
+		public function set_file_info( $index ) {
+			$file_name = isset( $index['ref_type'] ) ? $index['ref_type'] : $index['post_type'];
+
+			$msg = "<li><h3>{$file_name}.json</h3>";
+			$msg .= "<ul><li>post type: {$index['post_type']}</li>";
+			$msg .= "<li>posts found: {$index['found_posts']}</li>";
+			$msg .= "<li>pages: {$index['max_pages']}</li>";
+			if ( isset( $index['duplicate_hooks'] ) && isset( $index['deprecated'] ) ) {
+				$msg .= "<li>deprecated: {$index['deprecated']}</li>";
+				$msg .= "<li>duplicates: {$index['duplicate_hooks']}</li>";
+			}
+			$msg .= '</ul></li>';
+
+			$this->file_info .=  $msg;
+		}
+
+		private function set_index( $ref_type, $post_type, $args = array(), $php_doc_parser = '' ) {
+			if ( isset( $this->index['post_type'] ) && ( $post_type === $this->index['post_type'] ) ) {
+				return;
+			}
+
+			$this->index['post_type'] = $post_type;
+
+			if ( 'php_doc_parser' === $php_doc_parser ) {
+				$this->index['ref_type'] = $ref_type;
+				$this->index['version']  = wppj_get_phpdoc_parser_version();
+
+				$base_url = 'https://developer.wordpress.org/reference';
+				$base_url = esc_url( trailingslashit( $base_url ) );
+
+				if ( ( 'actions' === $ref_type ) || ( 'filters' === $ref_type ) ) {
+					$base_url = $base_url . 'hooks';
+				} else {
+					$base_url = $base_url . $ref_type;
+				}
+			} else {
+				$base_url = get_post_type_archive_link( $post_type );
+				$base_url = $base_url ? $base_url : get_home_url();
+			}
+
+			$this->index['url'] = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
+		}
+
+		public function sanitize_query_args( $args ) {
+			$defaults = array(
+				'posts_per_page' => -1,
+				'page'           => '',
+			);
+
+			$args = wp_parse_args( $args, $defaults );
+
+			$args['page'] = absint( $args['page'] );
+			if ( -1 !== (int) $args['posts_per_page'] ) {
+				$posts_per_page         = absint( $args['posts_per_page'] );
+				$args['posts_per_page'] = $posts_per_page ? $posts_per_page : -1;
+			}
+
+			return $args;
 		}
 
 		/**
-		 * Prints debug information to the screen
+		 * Prints JSON file information to the screen
 		 *
 		 * @since 0.1
 		 */
-		function debug_output( ) {
-			if ( $this->debug_msg ) {
+		public function file_info_output( ) {
+			if ( $this->file_info ) {
 				echo '<h2>JSON files</h2>';
-				echo '<ul>' . $this->debug_msg . '</ul>';
+				echo '<ul>' . $this->file_info . '</ul>';
 			}
 		}
 
