@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 			$ppp             = 0;
 			$i               = 0;
 
-			$index_key = apply_filters('wp_parser_json_index_key', 'slug');
+			$index_key = apply_filters( 'wp_parser_json_index_key', 'slug' );
 
 			foreach ( $posts as $post_items ) {
 				foreach ( $post_items as $post ) {
@@ -67,7 +67,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				'posts'       => array(),
 			);
 
-			$index_key = apply_filters('wp_parser_json_index_key', 'slug');
+			$index_key = apply_filters( 'wp_parser_json_index_key', 'slug' );
 
 			$posts = array_values( $posts );
 			foreach ( $posts as $page => $value ) {
@@ -148,6 +148,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				return false;
 			}
 
+			$posts_per_page   = $args['posts_per_page'];
 			$files_created    = false;
 			$phpdoc_post_type = false;
 			$error            = '';
@@ -164,8 +165,17 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$this->reset_index();
 				$filename        = sanitize_file_name( $slug );
 				$post_type_posts = array();
-				$args['page']    = 1;
 				$post_type_limit = 0;
+				$args['page']    = 1;
+
+				/**
+				 * Filter the number of posts per JSON file.
+				 *
+				 * @param int    $posts_per_page Number of posts per page. Default -1 (all posts).
+				 * @param string $post_type      Post type.
+				 */
+				$args['posts_per_page'] = apply_filters( 'wp_parser_json_posts_per_page', $posts_per_page, $post_type );
+				$args = $this->sanitize_query_args( $args );
 
 				/**
 				 * Limit the amount of JSON files that can be created per post type.
