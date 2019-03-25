@@ -148,7 +148,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				return false;
 			}
 
-			$posts_per_page   = $args['posts_per_page'];
+			$posts_per_page   = (int) $args['posts_per_page'];
 			$files_created    = false;
 			$phpdoc_post_type = false;
 			$error            = '';
@@ -168,14 +168,20 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$post_type_limit = 0;
 				$args['page']    = 1;
 
-				/**
-				 * Filter the number of posts per JSON file.
-				 *
-				 * @param int    $posts_per_page Number of posts per page. Default -1 (all posts).
-				 * @param string $post_type      Post type.
-				 */
-				$args['posts_per_page'] = apply_filters( 'wp_parser_json_posts_per_page', $posts_per_page, $post_type );
-				$args = $this->sanitize_query_args( $args );
+				if ( -1 !== $posts_per_page ) {
+					/**
+					 * Filter the number of posts per JSON file.
+					 *
+					 * Can only be filtered if $posts_per_page is not -1.
+					 *
+					 * @param int    $posts_per_page Number of posts per page.
+					 * @param string $post_type      Post type.
+					 */
+					$args['posts_per_page'] = apply_filters( 'wp_parser_json_posts_per_page', $posts_per_page, $post_type );
+
+					$args = $this->sanitize_query_args( $args );
+					$args['posts_per_page'] = ( -1 === $args['posts_per_page'] ) ? $posts_per_page : $args['posts_per_page'];
+				}
 
 				/**
 				 * Limit the amount of JSON files that can be created per post type.
@@ -199,7 +205,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 					$post_type_items = $this->get_post_type_items( $slug, $post_type, $args );
 
 					if ( 'continue' === $post_type_items ) {
-						// Get next page of posts if content === 'continue'
+						// Get next page of posts if content is 'continue'
 						$args['page'] = $args['page'] + 1;
 						continue;
 					}
