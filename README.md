@@ -11,6 +11,8 @@ wp parser-json generate --post_type=post,page --posts_per_page=100
 
 The JSON files are saved in this plugin's directory in the folder `json-files`. If you use the `--posts_per_page` option multiple (numbered) files are created for a post type instead of a single file (per post type).
 
+### Settings page
+
 ![Screen shot of settings page](https://user-images.githubusercontent.com/1436618/54931180-d271e600-4f18-11e9-896d-497efb249b11.png)
 
 ### Backward Compatibility
