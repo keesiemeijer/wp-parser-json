@@ -66,7 +66,7 @@ This will result with the post ID added in the JSON files.
 
 ### Pagination
 
-When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to access the posts in paginated (`numbered`) JSON files.
+When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to access the the posts in the paginated (numbered) JSON files.
 
 Example of a `movies-index.json` file created with `--posts_per_page=2`.
 
