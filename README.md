@@ -8,7 +8,7 @@ Example
 wp parser-json generate --post_type=post,page --posts_per_page=100
 ```
 
-The JSON files are saved in this plugin's directory in the folder `json-files`. If you use the `--posts_per_page` option multiple files are created for a post type otherwise it creates a single file per post type.
+The JSON files are saved in this plugin's directory in the folder `json-files`. If you use the `--posts_per_page` option multiple (numbered) files are created for a post type instead of a single file (per post type).
 
 ### Backward Compatibility
 
@@ -53,7 +53,7 @@ This will result with the post ID added in the JSON files.
 {
   "post_type": "movies",
   "url": "https:\/\/my-website.com\/movie",
-  "found_posts": 100,
+  "found_posts": 2,
   "max_pages": 1,
   "posts_per_page": -1,
   "content":[
@@ -73,7 +73,7 @@ Example of a `movies-index.json` file created with `--posts_per_page=2`.
 {
   "post_type": "movies",
   "url": "https:\/\/my-website.com\/movie",
-  "found_posts": 100,
+  "found_posts": 3,
   "max_pages": 2,
   "posts_per_page": 2,
   "posts": {
@@ -85,4 +85,13 @@ Example of a `movies-index.json` file created with `--posts_per_page=2`.
 ```
 
 In this example you see that you can access the Die Hard post in the `movies-1.json` file.
+
+### Filters
+
+* [wp_parser_json_content_item](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-query.php#L77)
+* [wp_parser_json_base_url](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-query.php#L284)
+* [wp_parser_json_query_args](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-query.php#L213)
+* [wp_parser_json_parse_post_types](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L144)
+* [wp_parser_json_file_limit](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L178)
+* [wp_parser_json_index_key](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L27)
 
