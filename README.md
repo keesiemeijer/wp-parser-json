@@ -1,45 +1,35 @@
 # wp-parser-json
-A WordPress plugin to create JSON files with post type posts.
+A WordPress plugin to create JSON files with posts.
 
-The settings page for this plugin is at `Tools` -> `WP Parser JSON`. Here you can create JSON files for any post type. Or use the `wp parser-json generate` WP-CLI command to create JSON files.
+The settings page for this plugin is at `Tools` -> `WP Parser JSON`. Here you can create JSON files for any post type. Or use the `wp parser-json generate` [WP-CLI](https://wp-cli.org/) command to create JSON files.
 
+Example
 ```bash
-wp parser-json generate --post_type=post,page
+wp parser-json generate --post_type=post,page --posts_per_page=100
 ```
 
-The JSON files are saved in this plugin's directory in the folder `json-files`.
+The JSON files are saved in this plugin's directory in the folder `json-files`. If you use the `--posts_per_page` option multiple files are created for a post type otherwise it creates a single file per post type.
 
 ### Backward Compatibility
 
-Originally this plugin only created JSON files for the post types of the the [WP Parser plugin](https://github.com/WordPress/phpdoc-parser). For backward compatibility if you do not provide a post type and the WP Parser post types exist it will create the JSON files for the `wp-parser-function`,`wp-parser-hook` and`wp-parser-class` post types.
-
-The ***WP Parser plugin*** post type files are:
-
-* functions.json
-* hooks.json
-* actions.json
-* filters.json
-* classes.json
-* version.json
-* wp-parser-json.zip (zip file containing all files above)
-
-The version.json file has the WordPress version that was parsed with the WP Parser plugin.
-```json
-{"version":"5.1"}
-```
+Originally this plugin only created JSON files for the post types of the the [WP Parser plugin](https://github.com/WordPress/phpdoc-parser). For backward compatibility if you do not provide a post type and the WP Parser post types exist it will create the JSON files for the `wp-parser-function`,`wp-parser-hook` and`wp-parser-class` post types. It will also create a `version.json` file with the WP version that was parsed.
 
 ### JSON
 
-The JSON files have this structure (example movies.json)
+This is a JSON file structure example for a `movies` post type. 
+
 ```json
 {
-  "post_type":"movies",
-  "url":"https:\/\/my-website.com\/movie",
+  "post_type": "movies",
+  "url": "https:\/\/my-website.com\/movie",
+  "found_posts": 100,
+  "max_pages": 1,
+  "posts_per_page": -1,
   "content":[
-      {"title":"Die Hard","slug":"die-hard"},
-      {"title":"Mad Max Fury Road","slug":"mad-max-fury-road"},
+      {"title": "Die Hard", "slug": "die-hard"},
+      {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road"},
 
-      {"title":"etc...","slug":"etc..."}
+      {"title": "etc...", "slug":"etc..."}
     ]
 }
 ```
@@ -61,11 +51,38 @@ This will result with the post ID added in the JSON files.
 
 ```json
 {
-  "post_type":"movies",
-  "url":"https:\/\/my-website.com\/movie",
+  "post_type": "movies",
+  "url": "https:\/\/my-website.com\/movie",
+  "found_posts": 100,
+  "max_pages": 1,
+  "posts_per_page": -1,
   "content":[
-      {"title":"Die Hard","slug":"die-hard","post_id": 1288},
-      {"title":"Mad Max Fury Road","slug":"mad-max-fury-road","post_id": 2768},
+      {"title": "Die Hard", "slug": "die-hard", "post_id": 1288},
+      {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "post_id": 2768}
     ]
 }
 ```
+
+### Pagination
+
+When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to look up posts in paginated (`numbered`) files.
+
+Example of a `movies-index.json` file created with `--posts_per_page=2`.
+
+```json
+{
+  "post_type": "movies",
+  "url": "https:\/\/my-website.com\/movie",
+  "found_posts": 100,
+  "max_pages": 2,
+  "posts_per_page": 2,
+  "posts": {
+    "die-hard": 1,
+    "mad-max-fury-road": 1,
+    "the-terminator": 2
+  }
+}
+```
+
+In this example you see that you can access the Die Hard post in the `movies-1.json` file.
+

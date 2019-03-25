@@ -50,7 +50,8 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		 *
 		 * @param string $ref_type  File slug.
 		 * @param string $post_type Post type.
-		 * @return array Array with post type content.
+		 * @param array  $args      Arguments for generating a file.
+		 * @return array Array with post items.
 		 */
 		private function get_post_type_posts( $ref_type, $post_type, $args = array() ) {
 			$this->set_index( $ref_type, $post_type, $args );
@@ -83,6 +84,14 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 			return $items;
 		}
 
+		/**
+		 * Get posts for a phpdoc parser post type.
+		 *
+		 * @param string $ref_type  File slug.
+		 * @param string $post_type Post type.
+		 * @param array  $args      Arguments for generating a file.
+		 * @return array Array with post items.
+		 */
 		private function get_phpdoc_post_type_posts( $ref_type, $post_type, $args = array() ) {
 			$this->set_index( $ref_type, $post_type, $args, 'php_doc_parser' );
 
@@ -148,7 +157,7 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 		}
 
 		/**
-		 * Gets posts for reference Functions, Hooks, Actions, Filters, Classes
+		 * Gets posts for a post type
 		 *
 		 * @since 0.1
 		 *
@@ -194,6 +203,13 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 					)
 				);
 			}
+
+			/**
+			 * Filter the query args to get the posts for a post type.
+			 *
+			 * @param array $query_args Query arguments.
+			 * @param array $args       Arguments for generating a file.
+			 */
 			$query_args = apply_filters( 'wp_parser_json_query_args', $query_args, $args );
 
 			// Unfilterable query args
@@ -201,36 +217,40 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 			$query_args['posts_per_page'] = $posts_per_page;
 			if ( $offset ) {
 				$query_args['offset'] = $offset;
+			} else {
+				unset( $query_args['offset'] );
 			}
 
 			return get_posts( $query_args );
 		}
 
-
+		/**
+		 * Get the file index.
+		 *
+		 * @return array File index.
+		 */
 		public function get_index() {
 			return $this->index;
 		}
 
+		/**
+		 * Reset the file index.
+		 *
+		 */
 		public function reset_index() {
 			$this->index = array();
 		}
 
-		public function set_file_info( $index ) {
-			$file_name = isset( $index['ref_type'] ) ? $index['ref_type'] : $index['post_type'];
-
-			$msg = "<li><h3>{$file_name}.json</h3>";
-			$msg .= "<ul><li>post type: {$index['post_type']}</li>";
-			$msg .= "<li>posts found: {$index['found_posts']}</li>";
-			$msg .= "<li>pages: {$index['max_pages']}</li>";
-			if ( isset( $index['duplicate_hooks'] ) && isset( $index['deprecated'] ) ) {
-				$msg .= "<li>deprecated: {$index['deprecated']}</li>";
-				$msg .= "<li>duplicates: {$index['duplicate_hooks']}</li>";
-			}
-			$msg .= '</ul></li>';
-
-			$this->file_info .=  $msg;
-		}
-
+		/**
+		 * Set the file index for a post type.
+		 *
+		 * @param string $ref_type       File slug.
+		 * @param string $post_type      Post type.
+		 * @param array  $args           Arguments for generating a file.
+		 * @param string $php_doc_parser Whether this is a phpdoc parser post type.
+		 *                               Accepts `php_doc_parser` or empty string. Default empty string
+		 * @return array Array with post type content.
+		 */
 		private function set_index( $ref_type, $post_type, $args = array(), $php_doc_parser = '' ) {
 			if ( isset( $this->index['post_type'] ) && ( $post_type === $this->index['post_type'] ) ) {
 				return;
@@ -255,7 +275,34 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 				$base_url = $base_url ? $base_url : get_home_url();
 			}
 
+			/**
+			 * Filter the base archive url for a post type
+			 *
+			 * @param string $base_url  Archive url for a post type.
+			 * @param string $post_type Post type.
+			 */
 			$this->index['url'] = apply_filters( 'wp_parser_json_base_url', $base_url, $post_type );
+		}
+
+		/**
+		 * Set file index info for the admin page.
+		 *
+		 * @param array $index File index.
+		 */
+		public function set_file_info( $index ) {
+			$file_name = isset( $index['ref_type'] ) ? $index['ref_type'] : $index['post_type'];
+
+			$msg = "<li><h3>{$file_name}.json</h3>";
+			$msg .= "<ul><li>post type: {$index['post_type']}</li>";
+			$msg .= "<li>posts found: {$index['found_posts']}</li>";
+			$msg .= "<li>pages: {$index['max_pages']}</li>";
+			if ( isset( $index['duplicate_hooks'] ) && isset( $index['deprecated'] ) ) {
+				$msg .= "<li>deprecated: {$index['deprecated']}</li>";
+				$msg .= "<li>duplicates: {$index['duplicate_hooks']}</li>";
+			}
+			$msg .= '</ul></li>';
+
+			$this->file_info .=  $msg;
 		}
 
 		public function sanitize_query_args( $args ) {

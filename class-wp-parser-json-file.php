@@ -24,9 +24,11 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 			$ppp             = 0;
 			$i               = 0;
 
+			$index_key = apply_filters('wp_parser_json_index_key', 'slug');
+
 			foreach ( $posts as $post_items ) {
 				foreach ( $post_items as $post ) {
-					if ( ! isset( $post['slug'] ) ) {
+					if ( ! isset( $post[ $index_key ] ) ) {
 						continue;
 					}
 
@@ -65,11 +67,12 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				'posts'       => array(),
 			);
 
+			$index_key = apply_filters('wp_parser_json_index_key', 'slug');
 
 			$posts = array_values( $posts );
 			foreach ( $posts as $page => $value ) {
 				foreach ( $value as $post ) {
-					$index['posts'][ $post['slug'] ] = $page + 1;
+					$index['posts'][ $post[ $index_key ] ] = $page + 1;
 					$index['found_posts'] = ++$index['found_posts'];
 				}
 			}
