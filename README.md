@@ -64,6 +64,8 @@ This will result with the post ID added in the JSON files.
 }
 ```
 
+The `url` and `posts_per_page` values can also be filtered. See [Filters](https://github.com/keesiemeijer/wp-parser-json#filters) below.
+
 ### Pagination
 
 When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to access the posts in the paginated (numbered) JSON files.
