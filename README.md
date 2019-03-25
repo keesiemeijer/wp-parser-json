@@ -1,5 +1,6 @@
-# wp-parser-json
-A WordPress plugin to create JSON files with posts.
+# WP Parser JSON
+
+A WordPress plugin to create JSON files from posts.
 
 The settings page for this plugin is at `Tools` -> `WP Parser JSON`. Here you can create JSON files for any post type. Or use the `wp parser-json generate` [WP-CLI](https://wp-cli.org/) command to create JSON files.
 
@@ -12,7 +13,7 @@ The JSON files are saved in this plugin's directory in the folder `json-files`. 
 
 ### Backward Compatibility
 
-Originally this plugin only created JSON files for the post types of the the [WP Parser plugin](https://github.com/WordPress/phpdoc-parser). For backward compatibility if you do not provide a post type and the WP Parser post types exist it will create the JSON files for the `wp-parser-function`,`wp-parser-hook` and`wp-parser-class` post types. It will also create a `version.json` file with the WP version that was parsed.
+Originally this plugin only created JSON files for the post types of the the [WP Parser](https://github.com/WordPress/phpdoc-parser) plugin. For backward compatibility if you do not provide a post type and the WP Parser post types exist it will create the JSON files for the `wp-parser-function`,`wp-parser-hook` and`wp-parser-class` post types. It will also create a `version.json` file with the WP version that was parsed.
 
 ### JSON
 
@@ -65,7 +66,7 @@ This will result with the post ID added in the JSON files.
 
 ### Pagination
 
-When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to look up posts in paginated (`numbered`) files.
+When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to access the posts in paginated (`numbered`) JSON files.
 
 Example of a `movies-index.json` file created with `--posts_per_page=2`.
 
