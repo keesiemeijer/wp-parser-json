@@ -83,10 +83,9 @@ Example of a `movies-index.json` file created with `--posts_per_page=2`.
   "found_posts": 3,
   "max_pages": 2,
   "posts_per_page": 2,
-  "posts": {
-    "die-hard": 1,
-    "mad-max-fury-road": 1,
-    "the-terminator": 2
+  "pages": {
+    "1": ["die-hard", "mad-max-fury-road"],
+    "2": ["the-terminator"]
   }
 }
 ```
