@@ -103,5 +103,5 @@ In this example you see that you can access the Die Hard post in the `movies-1.j
 * [wp_parser_json_index_key](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L32)
 * [wp_parser_json_index_content_item](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L93)
 * [wp_parser_json_posts_page_index](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L266)
-
+* [wp_parser_json_index_page_index](https://github.com/keesiemeijer/wp-parser-json/blob/41f0be8eafd333a858e1a6681198d0f8e476b827/class-wp-parser-json-file.php#L302)
 
