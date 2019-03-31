@@ -299,7 +299,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				 *
 				 * @param array $page_index Index of a JSON index page file.
 				 */
-				$page_index = apply_filters('wp_parser_json_posts_page_index', $page_index );
+				$page_index = apply_filters('wp_parser_json_index_page_index', $page_index );
 
 				$page_index = json_encode( $page_index );
 				$file = trailingslashit( $dirs['json-files'] ) . $filename . '-index.json';

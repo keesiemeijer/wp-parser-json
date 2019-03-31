@@ -100,5 +100,8 @@ In this example you see that you can access the Die Hard post in the `movies-1.j
 * [wp_parser_json_parse_post_types](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L144)
 * [wp_parser_json_query_args](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-query.php#L213)
 * [wp_parser_json_file_limit](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L178)
-* [wp_parser_json_index_key](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L27)
+* [wp_parser_json_index_key](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L32)
+* [wp_parser_json_index_content_item](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L93)
+* [wp_parser_json_posts_page_index](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L266)
+
 
