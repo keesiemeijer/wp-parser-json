@@ -256,15 +256,16 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$posts_index = $page_index;
 				foreach ( array_values( $paginated_posts ) as $key => $posts ) {
 					$posts_index['page']    = $key + 1;
-					$posts_index['content'] = $posts;
 
 					/**
 					 * Filter the index of a JSON posts page file.
 					 *
 					 * @param array $posts_index Index of a JSON posts page file.
 					 */
-					$posts_index  = apply_filters('wp_parser_json_posts_page_index', $posts_index );
-					$json_content = json_encode( $posts_index );
+					$posts_index  = apply_filters( 'wp_parser_json_posts_page_index', $posts_index );
+
+					$posts_index['content'] = $posts;
+					$json_content           = json_encode( $posts_index );
 
 					// File name number if posts_per_page is not -1
 					$number = ( -1 !== (int) $args['posts_per_page'] ) ? '-' . ( $key + 1 ) : '';
@@ -292,16 +293,16 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 					continue;
 				}
 
-				$page_index['pages'] = $page_index_posts;
-
 				/**
 				 * Filter the index of a JSON index page file.
 				 *
 				 * @param array $page_index Index of a JSON index page file.
 				 */
-				$page_index = apply_filters('wp_parser_json_index_page_index', $page_index );
+				$page_index = apply_filters( 'wp_parser_json_index_page_index', $page_index );
 
-				$page_index = json_encode( $page_index );
+				$page_index['pages'] = $page_index_posts;
+				$page_index          = json_encode( $page_index );
+
 				$file = trailingslashit( $dirs['json-files'] ) . $filename . '-index.json';
 
 				if ( $wp_cli ) {
