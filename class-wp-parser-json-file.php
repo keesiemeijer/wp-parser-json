@@ -304,6 +304,10 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$page_index['posts'] = $page_index_posts;
 				$page_index          = json_encode( $page_index );
 
+				// Cheap way to convert empty posts attribute to object
+				$page_index = str_replace('"posts":[]', '"posts":{}', $page_index);
+
+
 				$file = trailingslashit( $dirs['json-files'] ) . $filename . '-index.json';
 
 				if ( $wp_cli ) {
