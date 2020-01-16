@@ -9,6 +9,12 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 			parent::__construct();
 		}
 
+
+		public function is_json_post( $post ) {
+			$required = array( 'title', 'slug' );
+			return ! array_diff( $required, array_keys( $post ) );
+		}
+
 		/**
 		 * Paginate posts
 		 *
@@ -24,16 +30,9 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 			$ppp             = 0;
 			$i               = 0;
 
-			/**
-			 * Key to find posts in paginated JSON files.
-			 *
-			 * @param string $index_key Key to find posts in paginated JSON files. Default 'slug'
-			 */
-			$index_key = apply_filters( 'wp_parser_json_index_key', 'slug' );
-
 			foreach ( $posts as $post_items ) {
 				foreach ( $post_items as $post ) {
-					if ( ! isset( $post[ $index_key ] ) ) {
+					if ( ! $this->is_json_post( $post ) ) {
 						continue;
 					}
 
@@ -41,6 +40,8 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 						$paginated_posts[] = $post;
 						continue;
 					}
+
+					$post['page'] = $i + 1;
 
 					$paginated_posts[ $i ][] = $post;
 					++$ppp;
@@ -72,27 +73,21 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				'posts'       => array(),
 			);
 
-			/** This filter is documented in class-wp-parser-json-file.php */
-			$index_key = apply_filters( 'wp_parser_json_index_key', 'slug' );
+			$item_defaults = array(
+				'title' => '',
+				'slug'  => '',
+			);
 
 			$posts = array_values( $posts );
 			foreach ( $posts as $page => $value ) {
 				foreach ( $value as $post ) {
-					/**
-					 * Filter the items in the index file.
-					 *
-					 * It's recommended to keep the items small.
-					 * The values should only be used to find posts in paginated JSON files.
-					 *
-					 * @param int|string $slug      Slug to look up posts in paginated JSON files.
-					 *                              Default post slug.
-					 * @param string     $index_key Key to to look up posts in paginated JSON files.
-					 *                              Default 'slug'
-					 * @param array      $post      Post item in paginated JSON files.
-					 */
-					$item = apply_filters( 'wp_parser_json_index_content_item', $post[ $index_key ], $index_key, $post );
+					if ( isset( $post['page'] ) ) {
+						$item_defaults['page'] = '';
+						// remove non default index keys
+						$post = array_intersect_key( $post, $item_defaults );
+					}
 
-					$index['posts'][ $item ] = $page + 1;
+					$index['posts'][] = $post;
 					$index['found_posts'] = ++$index['found_posts'];
 				}
 			}
@@ -254,6 +249,11 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$page_index['posts_per_page'] = $args['posts_per_page'];
 				$this->set_file_info( $page_index );
 
+				$item_defaults = array(
+					'title' => '',
+					'slug'  => '',
+				);
+
 				$posts_index = $page_index;
 				foreach ( $paginated_posts as $key => $posts ) {
 					$posts_index['page']    = $key + 1;
@@ -265,11 +265,18 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 					 */
 					$posts_index  = apply_filters( 'wp_parser_json_posts_page_index', $posts_index );
 
-					$posts_index['content'] = $posts;
-					$json_content           = json_encode( $posts_index );
-
 					// File name number if posts_per_page is not -1
-					$number = ( -1 !== (int) $args['posts_per_page'] ) ? '-' . ( $key + 1 ) : '';
+					$number = '';
+					if ( -1 !== (int) $args['posts_per_page'] ) {
+						$number = '-' . ( $key + 1 );
+						$posts = array_map( function( $post_item ) {
+								unset( $post_item['page'] );
+								return $post_item;
+							}, $posts );
+					}
+
+					$posts_index['posts'] = $posts;
+					$json_content         = json_encode( $posts_index );
 
 					$file = trailingslashit( $dirs['json-files'] ) . $filename . $number . '.json';
 					if ( $wp_cli ) {
@@ -305,13 +312,12 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				$page_index          = json_encode( $page_index );
 
 				// Cheap way to convert empty posts attribute to object
-				$page_index = str_replace('"posts":[]', '"posts":{}', $page_index);
+				$page_index = str_replace( '"posts":[]', '"posts":{}', $page_index );
 
-
-				$file = trailingslashit( $dirs['json-files'] ) . $filename . '-index.json';
+				$file = trailingslashit( $dirs['json-files'] ) . $filename . '.json';
 
 				if ( $wp_cli ) {
-					WP_CLI::log( "Generating {$filename}-index.json file..." );
+					WP_CLI::log( "Generating {$filename}.json file..." );
 				}
 
 				// Create index file for a post type.

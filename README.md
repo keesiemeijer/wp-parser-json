@@ -21,7 +21,7 @@ Originally this plugin only created JSON files for the post types of the the [WP
 
 ### JSON
 
-This is a JSON file structure example for a `movies` post type. 
+This is the JSON file (movies.json) structure for a `movies` post type. 
 
 ```json
 {
@@ -72,9 +72,9 @@ The `url` and `posts_per_page` values can also be filtered. See [Filters](https:
 
 ### Pagination
 
-When the `--posts_per_page` option is used an extra index file `{post_type}-index.json` is created to access the posts in the paginated (numbered) JSON files.
+Use the `--posts_per_page` option if you need to add a lot of post fields with the `wp_parser_json_content_item` filter above. This stops the JSON files from getting to big. All post fields you add with the filter will be put in paginated files. 
 
-Example of a `movies-index.json` file created with `--posts_per_page=2`.
+Example of a `movies.json` file created with the  `--posts_per_page=2` option.
 
 ```json
 {
@@ -83,15 +83,15 @@ Example of a `movies-index.json` file created with `--posts_per_page=2`.
   "found_posts": 3,
   "max_pages": 2,
   "posts_per_page": 2,
-  "posts": {
-    "die-hard": 1,
-    "mad-max-fury-road": 1,
-    "the-terminator": 2
-  }
+  "content":[
+      {"title": "Die Hard", "slug": "die-hard", "page": 1},
+      {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "page": 1}
+      {"title": "The Terminator", "slug": "the-terminator", "page": 2}
+    ]
 }
 ```
 
-In this example you see that you can access the Die Hard post in the `movies-1.json` file.
+In this example you see that you can access the The Terminator post fields in the `movies-2.json` file.
 
 ### Filters
 
@@ -101,8 +101,6 @@ In this example you see that you can access the Die Hard post in the `movies-1.j
 * [wp_parser_json_parse_post_types](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L144)
 * [wp_parser_json_query_args](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-query.php#L213)
 * [wp_parser_json_file_limit](https://github.com/keesiemeijer/wp-parser-json/blob/9d002c10cc0b8a5a2e587de0fd477ddb6ae4205a/class-wp-parser-json-file.php#L178)
-* [wp_parser_json_index_key](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L32)
-* [wp_parser_json_index_content_item](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L93)
 * [wp_parser_json_posts_page_index](https://github.com/keesiemeijer/wp-parser-json/blob/9c27e8affbb21c9e3258da7e4c7f4c41adb7678d/class-wp-parser-json-file.php#L266)
 * [wp_parser_json_index_page_index](https://github.com/keesiemeijer/wp-parser-json/blob/41f0be8eafd333a858e1a6681198d0f8e476b827/class-wp-parser-json-file.php#L302)
 

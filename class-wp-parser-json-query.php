@@ -295,7 +295,7 @@ if ( ! class_exists( 'WP_Parser_JSON_Reference_Query' ) ) {
 			$msg = "<li><h3>{$file_name}.json</h3>";
 			$msg .= "<ul><li>post type: {$index['post_type']}</li>";
 			$msg .= "<li>posts found: {$index['found_posts']}</li>";
-			$msg .= "<li>pages: {$index['max_pages']}</li>";
+			$msg .= "<li>generated JSON pages: {$index['max_pages']}</li>";
 			if ( isset( $index['duplicate_hooks'] ) && isset( $index['deprecated'] ) ) {
 				$msg .= "<li>deprecated: {$index['deprecated']}</li>";
 				$msg .= "<li>duplicates: {$index['duplicate_hooks']}</li>";

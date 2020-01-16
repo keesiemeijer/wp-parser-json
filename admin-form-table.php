@@ -25,6 +25,7 @@
 					<input name="posts_per_page" type="number" min="1" step="1" id="posts_per_page" value="<?php echo $posts_per_page; ?>" class="small-text">
 					<?php _e('posts per page', 'wp-parser-json'); ?>
 				</label>
+				<p class="description"><?php _e('Only use this option if you add many post fields with the <code>wp_parser_json_content_item</code> filter', 'wp-parser-json'); ?></p>
 			</td>
 		</tr>
 	</tbody>
