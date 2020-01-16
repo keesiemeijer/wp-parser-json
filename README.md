@@ -21,7 +21,7 @@ Originally this plugin only created JSON files for the post types of the the [WP
 
 ### JSON
 
-This is the JSON file (movies.json) structure for a `movies` post type. 
+This is the JSON file (movies.json) structure for a `movies` post type.
 
 ```json
 {
@@ -30,7 +30,7 @@ This is the JSON file (movies.json) structure for a `movies` post type.
   "found_posts": 100,
   "max_pages": 1,
   "posts_per_page": -1,
-  "content":[
+  "posts":[
       {"title": "Die Hard", "slug": "die-hard"},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road"},
 
@@ -61,7 +61,7 @@ This will result with the post ID added in the JSON files.
   "found_posts": 2,
   "max_pages": 1,
   "posts_per_page": -1,
-  "content":[
+  "posts":[
       {"title": "Die Hard", "slug": "die-hard", "post_id": 1288},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "post_id": 2768}
     ]
@@ -72,7 +72,7 @@ The `url` and `posts_per_page` values can also be filtered. See [Filters](https:
 
 ### Pagination
 
-Use the `--posts_per_page` option if you need to add a lot of post fields with the `wp_parser_json_content_item` filter above. This stops the JSON files from getting to big. All post fields you add with the filter will be put in paginated files. 
+Use the `--posts_per_page` option if you need to add a lot of post fields with the `wp_parser_json_content_item` filter above. This stops the JSON files from getting to big. if `--posts_per_page` is used everything you add with the filter will be put in the paginated files.
 
 Example of a `movies.json` file created with the  `--posts_per_page=2` option.
 
@@ -83,7 +83,7 @@ Example of a `movies.json` file created with the  `--posts_per_page=2` option.
   "found_posts": 3,
   "max_pages": 2,
   "posts_per_page": 2,
-  "content":[
+  "posts":[
       {"title": "Die Hard", "slug": "die-hard", "page": 1},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "page": 1}
       {"title": "The Terminator", "slug": "the-terminator", "page": 2}
