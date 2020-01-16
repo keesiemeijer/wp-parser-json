@@ -70,7 +70,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 			$index = array(
 				'found_posts' => 0,
 				'max_pages'   => count( $posts ),
-				'posts'       => array(),
+				'content'     => array(),
 			);
 
 			$item_defaults = array(
@@ -87,7 +87,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 						$post = array_intersect_key( $post, $item_defaults );
 					}
 
-					$index['posts'][] = $post;
+					$index['content'][]   = $post;
 					$index['found_posts'] = ++$index['found_posts'];
 				}
 			}
@@ -242,8 +242,8 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 
 				$paginated_posts  = $this->get_paginated_posts( $post_type_posts, $post_type, $args );
 				$page_index       = $this->get_post_type_index( $paginated_posts );
-				$page_index_posts = $page_index['posts'];
-				unset( $page_index['posts'] );
+				$content          = $page_index['content'];
+				unset( $page_index['content'] );
 
 				$page_index                   = array_merge( $page_index, $this->get_index() );
 				$page_index['posts_per_page'] = $args['posts_per_page'];
@@ -275,7 +275,7 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 							}, $posts );
 					}
 
-					$posts_index['posts'] = $posts;
+					$posts_index['content'] = $posts;
 					$json_content         = json_encode( $posts_index );
 
 					$file = trailingslashit( $dirs['json-files'] ) . $filename . $number . '.json';
@@ -308,11 +308,11 @@ if ( ! class_exists( 'WP_Parser_JSON_File' ) ) {
 				 */
 				$page_index = apply_filters( 'wp_parser_json_index_page_index', $page_index );
 
-				$page_index['posts'] = $page_index_posts;
-				$page_index          = json_encode( $page_index );
+				$page_index['content'] = $content;
+				$page_index            = json_encode( $page_index );
 
-				// Cheap way to convert empty posts attribute to object
-				$page_index = str_replace( '"posts":[]', '"posts":{}', $page_index );
+				// Cheap way to convert empty content attribute to object
+				$page_index = str_replace( '"content":[]', '"content":{}', $page_index );
 
 				$file = trailingslashit( $dirs['json-files'] ) . $filename . '.json';
 

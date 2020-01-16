@@ -30,7 +30,7 @@ This is the JSON file (movies.json) structure for a `movies` post type.
   "found_posts": 100,
   "max_pages": 1,
   "posts_per_page": -1,
-  "posts":[
+  "content":[
       {"title": "Die Hard", "slug": "die-hard"},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road"},
 
@@ -61,7 +61,7 @@ This will result with the post ID added in the JSON files.
   "found_posts": 2,
   "max_pages": 1,
   "posts_per_page": -1,
-  "posts":[
+  "content":[
       {"title": "Die Hard", "slug": "die-hard", "post_id": 1288},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "post_id": 2768}
     ]
@@ -83,7 +83,7 @@ Example of a `movies.json` file created with the  `--posts_per_page=2` option.
   "found_posts": 3,
   "max_pages": 2,
   "posts_per_page": 2,
-  "posts":[
+  "content":[
       {"title": "Die Hard", "slug": "die-hard", "page": 1},
       {"title": "Mad Max Fury Road", "slug": "mad-max-fury-road", "page": 1}
       {"title": "The Terminator", "slug": "the-terminator", "page": 2}
